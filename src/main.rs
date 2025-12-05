@@ -1,10 +1,7 @@
-#![allow(unused)]
-
 use std::{collections::HashMap, fs::read_to_string, path::PathBuf};
 
 use music_matcher::{
     download_songs::{
-        self,
         formatters::{bandcamp_search_formatter, ygg_torrent_search_formatter},
         select_source::select_source,
     },
@@ -75,6 +72,7 @@ fn main() {
             }
         }
     }
+    println!("Download list prepared with {} sources.", dl_list.len());
 }
 
 fn get_songs_sorted(missing_songs: &[Song]) -> Vec<ArtistWithSongs> {
@@ -97,22 +95,4 @@ fn get_songs_sorted(missing_songs: &[Song]) -> Vec<ArtistWithSongs> {
         .collect();
     songs.sort_by(|a, b| b.titles.len().cmp(&a.titles.len()));
     songs
-}
-
-fn album_download_worthy(missing_songs: &[Song]) -> Vec<String> {
-    missing_songs
-        .iter()
-        .fold(
-            HashMap::new(),
-            |mut acc: HashMap<String, Vec<String>>, song| {
-                acc.entry(song.artist.clone())
-                    .or_default()
-                    .push(song.title.clone());
-                acc
-            },
-        )
-        .iter()
-        .filter(|(_, titles)| titles.len() >= 3)
-        .map(|(artist, titles)| format!("{} ({} songs)", artist, titles.len()))
-        .collect()
 }

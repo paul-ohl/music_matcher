@@ -1,32 +1,36 @@
+use console::Term;
+
 use crate::types::{ArtistWithSongs, DownloadSource};
-use std::io::{Write, stdin, stdout};
+use std::io::{Write, stdout};
 
 pub fn select_source(artist_with_songs: &ArtistWithSongs) -> DownloadSource {
     println!(
         "For artist: {:?}\nWhat do you want to do?",
-        artist_with_songs.artist
+        artist_with_songs
     );
+    let term = Term::stdout();
+
     loop {
         print!(
             "Select from options: [b]andcamp, ygg[t]orrent, [s]oundcloud, [y]outube, skip[x], [q]uit: "
         );
         stdout().flush().unwrap();
-        let mut input = String::new();
-        let input = match stdin().read_line(&mut input) {
-            Ok(_) => Some(input.trim().to_ascii_lowercase()),
+
+        let input = match term.read_char() {
+            Ok(c) => c,
             Err(e) => {
                 eprintln!("Error reading input: {}", e);
-                None
+                continue;
             }
         };
 
-        let source = match input.as_deref() {
-            Some("b") => Some(DownloadSource::Bandcamp),
-            Some("t") => Some(DownloadSource::YggTorrent),
-            Some("s") => Some(DownloadSource::SoundCloud),
-            Some("y") => Some(DownloadSource::YouTube),
-            Some("x") => Some(DownloadSource::Skip),
-            Some("q") => Some(DownloadSource::Quit),
+        let source = match input {
+            'b' => Some(DownloadSource::Bandcamp),
+            't' => Some(DownloadSource::YggTorrent),
+            's' => Some(DownloadSource::SoundCloud),
+            'y' => Some(DownloadSource::YouTube),
+            'x' => Some(DownloadSource::Skip),
+            'q' => Some(DownloadSource::Quit),
             _ => {
                 println!("Invalid input. Please try again.");
                 None
