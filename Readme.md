@@ -33,9 +33,6 @@ can't be certain that it's going to match.
 
 ## Next steps
 
-Better code: I want to have all the variables to be cli parameters instead of
-hardcoded variables. Also I want to split the files better.
-
 Improved finding algorithm: If the title of the needle matches a substring of an
 entry in the haystack, this should be considered a partial match instead of a
 missing song. I should be able to compare artists one by one for one song,

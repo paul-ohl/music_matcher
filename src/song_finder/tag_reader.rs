@@ -1,6 +1,6 @@
 use unidecode::unidecode;
 
-use crate::Song;
+use crate::types::Song;
 
 #[derive(Debug, thiserror::Error)]
 pub enum TagReadingError {
@@ -18,7 +18,7 @@ pub enum TagReadingError {
 
 pub fn read_tags(path: &std::path::Path) -> Result<Song, TagReadingError> {
     match path.extension().and_then(|ext| ext.to_str()) {
-        Some("jpg") | Some("pdf") | Some("png") => {
+        Some("jpg") | Some("pdf") | Some("png") | Some("txt") => {
             return Err(TagReadingError::SkippedFileFormat);
         }
         _ => {}
