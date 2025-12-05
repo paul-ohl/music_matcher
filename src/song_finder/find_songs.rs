@@ -21,7 +21,11 @@ pub fn find_songs(playlist_file: PathBuf, songs_directory: PathBuf) -> SongSearc
         } else {
             let partial_found: Vec<Song> = existing_songs
                 .iter()
-                .filter(|s| s.title == song.title)
+                .filter(|s| {
+                    s.title == song.title
+                        || (s.artist == song.artist
+                            && (s.title.contains(&song.title) || song.title.contains(&s.title)))
+                })
                 .cloned()
                 .collect();
             if !partial_found.is_empty() {

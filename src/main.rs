@@ -1,6 +1,16 @@
-use std::{fs::read_to_string, path::PathBuf};
+#![allow(unused)]
 
-use music_matcher::{song_finder::find_songs::find_songs, types::SongSearchResult};
+use std::{collections::HashMap, fs::read_to_string, path::PathBuf};
+
+use music_matcher::{
+    download_songs::{
+        self,
+        formatters::{bandcamp_search_formatter, ygg_torrent_search_formatter},
+        select_source::select_source,
+    },
+    song_finder::find_songs::find_songs,
+    types::{ArtistWithSongs, DownloadSource, DownloadableSource, Song, SongSearchResult},
+};
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
@@ -27,6 +37,82 @@ fn main() {
         present_songs.len(),
         partial_songs.len(),
         missing_songs.len(),
-        (present_songs.len() as f64 / playlist_len as f64) * 100.0
+        ((present_songs.len() as f64 / playlist_len as f64) * 100.0).round()
     );
+
+    let sorted_songs = get_songs_sorted(&missing_songs);
+    let mut dl_list: Vec<DownloadableSource> = Vec::new();
+    for artist_with_songs in &sorted_songs {
+        loop {
+            let choice = select_source(artist_with_songs);
+            match choice {
+                DownloadSource::Skip => {
+                    println!("Skipping {}", artist_with_songs.artist);
+                    break;
+                }
+                DownloadSource::Quit => {
+                    println!("Quitting.");
+                    return;
+                }
+                DownloadSource::YouTube => {
+                    println!("{} added to youtube dl list", artist_with_songs.artist);
+                    dl_list.push(DownloadableSource::YouTube(artist_with_songs.clone()));
+                    break;
+                }
+                DownloadSource::SoundCloud => {
+                    println!("{} added to soundcloud dl list", artist_with_songs.artist);
+                    dl_list.push(DownloadableSource::SoundCloud(artist_with_songs.clone()));
+                    break;
+                }
+                DownloadSource::YggTorrent => {
+                    webbrowser::open(&ygg_torrent_search_formatter(&artist_with_songs.artist))
+                        .unwrap();
+                }
+                DownloadSource::Bandcamp => {
+                    webbrowser::open(&bandcamp_search_formatter(&artist_with_songs.artist))
+                        .unwrap();
+                }
+            }
+        }
+    }
+}
+
+fn get_songs_sorted(missing_songs: &[Song]) -> Vec<ArtistWithSongs> {
+    let mut songs: Vec<ArtistWithSongs> = missing_songs
+        .iter()
+        .fold(
+            HashMap::new(),
+            |mut acc: HashMap<String, Vec<String>>, song| {
+                acc.entry(song.artist.clone())
+                    .or_default()
+                    .push(song.title.clone());
+                acc
+            },
+        )
+        .iter()
+        .map(|(artist, titles)| ArtistWithSongs {
+            artist: artist.clone(),
+            titles: titles.clone(),
+        })
+        .collect();
+    songs.sort_by(|a, b| b.titles.len().cmp(&a.titles.len()));
+    songs
+}
+
+fn album_download_worthy(missing_songs: &[Song]) -> Vec<String> {
+    missing_songs
+        .iter()
+        .fold(
+            HashMap::new(),
+            |mut acc: HashMap<String, Vec<String>>, song| {
+                acc.entry(song.artist.clone())
+                    .or_default()
+                    .push(song.title.clone());
+                acc
+            },
+        )
+        .iter()
+        .filter(|(_, titles)| titles.len() >= 3)
+        .map(|(artist, titles)| format!("{} ({} songs)", artist, titles.len()))
+        .collect()
 }
